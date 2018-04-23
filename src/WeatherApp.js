@@ -1,13 +1,13 @@
 import React, { Component } from 'react';
 
-class Weather_App extends Component {
+class WeatherApp extends Component {
   render() {
     return (
-      <div class="weather-app">
+      <div className="weather-app">
         <div>Hello world</div> 
       </div>      
     );
   }
 }
 
-export default Weather_App;
+export default WeatherApp;

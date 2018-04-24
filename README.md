@@ -306,7 +306,7 @@ render(){
   console.log('component WeatherXXX render')
 }
 ```
-打印效果如图:
+打印效果如图:  
 ![](https://github.com/alivebao/weather_app/blob/chapter-2_High-quality-component/screenshoots/chapter2_2_component_mount.PNG)  
 为什么两个组件的componentDidMount会在最后才统一执行？  
 在组件的生命周期中，当componentDidMount被调用时，组件一定是已经被渲染出来了的  
@@ -330,7 +330,7 @@ render(){
     <button onClick= {() => {this.forceUpdate()}}>Force Update</button>
   </div>
 }
-...
+```
 渲染完成后点击Force Fresh,可在控制台看到WeatherSelecter和WeatherPanel都重新走了一遍render：
 ![](https://github.com/alivebao/weather_app/blob/chapter-2_High-quality-component/screenshoots/chapter2_3_force_update.PNG)  
 然后我们修改WeatherPanel，当WeatherPanel的props.location或state.temperature没变化时，该组件不更新：

@@ -1,30 +1,29 @@
-import React, { Component } from 'react';
-import WeatherSelecter from './WeatherSelecter'
+import React, { Component } from 'react'
+import WeatherHeader from './WeatherHeader'
 import WeatherPanel from './WeatherPanel'
-import {arrLocation as LocationGroup} from './WeatherLocationGroup'
+import './WeatherApp.css'
 
 class WeatherApp extends Component {
 	constructor(props) {
 		super(props)
 
 		this.state = {
-			selectedLocation: 'undefined'
+			selectedLocationId: 1
 		}
 
-		this.locationUpdate = this.locationUpdate.bind(this)
+		this.locationIdUpdate = this.locationIdUpdate.bind(this)
 	}
 
-	locationUpdate(locationName) {
+	locationIdUpdate(locationId) {
 		this.setState({
-			selectedLocation: locationName
+			selectedLocationId: locationId
 		})
 	}
   render() {
     return (
       <div className="weather-app">
-      	<WeatherSelecter locationGroup={LocationGroup} locationUpdate={this.locationUpdate}/>
-        <WeatherPanel location={this.state.selectedLocation} /> 
-        <button onClick= {() => {this.forceUpdate()}}>Force Update</button>
+      	<WeatherHeader selectedId={this.state.selectedLocationId} updateLocationId={this.locationIdUpdate}/>
+        <WeatherPanel selectedId={this.state.selectedLocationId} /> 
       </div>      
     );
   }

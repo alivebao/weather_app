@@ -1,0 +1,10 @@
+.weather-calender-selecter{
+  margin-top: 10px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.weather-data{
+  text-align: center;
+  cursor: pointer;
+}

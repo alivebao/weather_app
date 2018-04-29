@@ -5,14 +5,13 @@
 .selected-status .detail{
   display: flex;
   justify-content: space-between;
-  padding-right: 80px;
 }
 .selected-status .detail>div:first-of-type{
   display: flex;
-  color: black;
   font-weight: bold;
   font-size: 1.25em;
   align-items: center;
+  width: 60%;
 }
 .selected-status .detail>div>div{
   margin: 10px;

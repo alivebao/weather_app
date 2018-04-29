@@ -1,55 +1,35 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
+import React, { Component } from 'react'
+import WeatherSelectedStatus from './WeatherSelectedStatus'
+import WeatherCalenderSelecter from './WeatherCalenderSelecter'
 
 class WeatherPanel extends Component {
-	constructor(props) {
-		super(props)
+  constructor(props) {
+    super(props)
 
-		this.state = {
-			temperature: 'undefined'
-		}
+    this.state = {
+      selectedCalender: 0
+    }
 
-		this.getTemperature = this.getTemperature.bind(this);
-	}
+    this.updateSelectedCalender = this.updateSelectedCalender.bind(this)
+  }
 
-	componentWillMount() {
-		console.log('component WeatherPanel WillMount')
-	}
-
-	componentDidMount() {
-		console.log('component WeatherPanel DidMount')
-	}
-
-	componentWillReceiveProps(nextProps) {
-		return true;
-	}
-
-	shouldComponentUpdate(nextProps, nextState) {
-		return (nextProps.location !== this.props.location) || 
-			(nextState.temperature !== this.state.temperature);
-	}
-
-	getTemperature() {
-		const mockTemperature = Math.random() * 100;
-		this.setState({
-			temperature: mockTemperature
-		})
-	}
+  updateSelectedCalender(selectedCalender) {
+    this.setState({
+      selectedCalender: selectedCalender
+    })
+  }
 
   render() {
-  	console.log('component WeatherPanel render')
-  	const {location} = this.props;
+  	const {dailyInfo} = this.props
+  	if(!Array.isArray(dailyInfo)) {
+  		return <div>Loading...</div>
+  	}
     return (
       <div className="weather-panel">
-      	<div>{location}的温度是: {this.state.temperature}</div>
-      	<button onClick = {this.getTemperature}>获取温度</button>
+      	<WeatherSelectedStatus currentDayInfo={dailyInfo[this.state.selectedCalender]}/>
+      	<WeatherCalenderSelecter dailyInfo={dailyInfo} updateSelectedCalender={this.updateSelectedCalender}/>
       </div>
     );
   }
 }
-
-WeatherPanel.propTypes = {
-	location: PropTypes.string.isRequired
-}
-
 export default WeatherPanel;

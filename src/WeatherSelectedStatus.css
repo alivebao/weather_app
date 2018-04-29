@@ -1,0 +1,18 @@
+.selected-status .status{
+  font-size: 1.5em;
+}
+
+.selected-status .detail{
+  display: flex;
+  justify-content: space-between;
+}
+.selected-status .detail>div:first-of-type{
+  display: flex;
+  font-weight: bold;
+  font-size: 1.25em;
+  align-items: center;
+  width: 60%;
+}
+.selected-status .detail>div>div{
+  margin: 10px;
+}

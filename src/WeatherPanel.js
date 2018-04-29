@@ -3,12 +3,31 @@ import WeatherSelectedStatus from './WeatherSelectedStatus'
 import WeatherCalenderSelecter from './WeatherCalenderSelecter'
 
 class WeatherPanel extends Component {
+  constructor(props) {
+    super(props)
+
+    this.state = {
+      selectedCalender: 0
+    }
+
+    this.updateSelectedCalender = this.updateSelectedCalender.bind(this)
+  }
+
+  updateSelectedCalender(selectedCalender) {
+    this.setState({
+      selectedCalender: selectedCalender
+    })
+  }
 
   render() {
+  	const {dailyInfo} = this.props
+  	if(!Array.isArray(dailyInfo)) {
+  		return <div>Loading...</div>
+  	}
     return (
       <div className="weather-panel">
-      	<WeatherSelectedStatus />
-      	<WeatherCalenderSelecter />
+      	<WeatherSelectedStatus currentDayInfo={dailyInfo[this.state.selectedCalender]}/>
+      	<WeatherCalenderSelecter dailyInfo={dailyInfo} updateSelectedCalender={this.updateSelectedCalender}/>
       </div>
     );
   }

@@ -9,7 +9,7 @@ class WeatherLocationSelecter extends Component {
       <div className="weather-selecter">
       	{
       		LocationGroup.map((locationObj) => {
-      			return <button className={locationObj.id == selectedId ? 'selected' : ''} key={locationObj.id} onClick={() => locationUpdate(locationObj.id)}>{locationObj.name}</button>
+      			return <button className={locationObj.id === selectedId ? 'selected' : ''} key={locationObj.id} onClick={() => locationUpdate(locationObj.id)}>{locationObj.name}</button>
       		})
       	}
       </div>

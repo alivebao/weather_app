@@ -3,6 +3,10 @@ import './WeatherSelectedStatus.css'
 
 class WeatherSelectedStatus extends Component {
 
+  shouldComponentUpdate(nextProps) {
+    return JSON.stringify(nextProps.currentDayInfo) !== JSON.stringify(this.props.currentDayInfo)
+  }
+
   render() {
     const {currentDayInfo} = this.props
     const {text_day, code_day, high, low, wind_scale, wind_direction, wind_direction_degree, wind_speed} = currentDayInfo
@@ -11,7 +15,7 @@ class WeatherSelectedStatus extends Component {
         <div className="status">{text_day}</div>
         <div className="detail">
           <div>
-            <img alt="status-img" src={require('./img/status_icon/' + code_day + '.png')} />
+            <img alt="status-img" src={require('../img/status_icon/' + code_day + '.png')} />
             <span>{low} ~ {high}°C</span>
           </div>
           <div>

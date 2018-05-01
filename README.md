@@ -4,6 +4,7 @@
   1. [介绍](#介绍)
   2. [React新的前端思维方式](#react新的前端思维方式)
   3. [设计高质量的React组件](#设计高质量的react组件)
+  4. [编写一个React实例](#编写一个react实例)
 
 ## 介绍
 在读完程墨老师的[《深入浅出React和Redux》](https://book.douban.com/subject/27033213/)后，打算结合自己的理解，以构建一个显示天气的应用为例，争取涵盖书中所介绍的所有知识点。  
@@ -91,7 +92,7 @@ PS：我刚试了下可以直接在return用class。。版本号:
 },
 ```
 然后网上搜了下，说React16允许DOM传属性了，所以这么操作也行， __但是，官方不建议这么搞，打开控制台可以看到还是弹出了一个Warning__   
-![](https://github.com/alivebao/weather_app/blob/chapter-1_Introduction/screenshoots/chapter2_class_warning.PNG)  
+![](https://github.com/alivebao/weather_app/blob/master/screenshoots/chapter2_class_warning.PNG)  
 
 ### 1.3 其他
 另外书中还谈到了React工作方式的优点 - 函数式编程思维:
@@ -275,8 +276,8 @@ render() {
 }
 ```  
 效果图：
-![](https://github.com/alivebao/weather_app/blob/chapter-2_High-quality-component/screenshoots/chapter2_1_state_and_props.PNG)  
-PS: 多个组件同步数据挺麻烦的，第三章的时候用Flux/Redux就方便多了  
+![](https://github.com/alivebao/weather_app/blob/master/screenshoots/chapter2_1_state_and_props.PNG)  
+PS: 多个组件同步数据挺麻烦的，以后学习了Flux/Redux就方便多了  
 
 ### 组件的生命周期
 组件在生命周期中可能会经历三个过程：
@@ -307,7 +308,7 @@ render(){
 }
 ```
 打印效果如图:  
-![](https://github.com/alivebao/weather_app/blob/chapter-2_High-quality-component/screenshoots/chapter2_2_component_mount.PNG)  
+![](https://github.com/alivebao/weather_app/blob/master/screenshoots/chapter2_2_component_mount.PNG)  
 为什么两个组件的componentDidMount会在最后才统一执行？  
 在组件的生命周期中，当componentDidMount被调用时，组件一定是已经被渲染出来了的  
 而render函数调用只是返回了该组件的结构描述，并是立刻渲染的。  
@@ -332,7 +333,7 @@ render(){
 }
 ```
 渲染完成后点击Force Fresh,可在控制台看到WeatherSelecter和WeatherPanel都重新走了一遍render：
-![](https://github.com/alivebao/weather_app/blob/chapter-2_High-quality-component/screenshoots/chapter2_3_force_update.PNG)  
+![](https://github.com/alivebao/weather_app/blob/master/screenshoots/chapter2_3_force_update.PNG)  
 然后我们修改WeatherPanel，当WeatherPanel的props.location或state.temperature没变化时，该组件不更新：
 ```jsx
 shouldComponentUpdate(nextProps, nextState) {
@@ -341,5 +342,145 @@ shouldComponentUpdate(nextProps, nextState) {
 }
 ```
 再点Force Update，可以看见只有WeatherSelecter执行了render，WeatherPanel并没有重新渲染：
-![](https://github.com/alivebao/weather_app/blob/chapter-2_High-quality-component/screenshoots/chapter2_4_shouldComponentUpdate.PNG)  
-组件被更新后，其DOM被重绘了，如果需要在重绘后再在组件上做一些DOM相关的操作，则可以在componentDidUpdate中进行
+![](https://github.com/alivebao/weather_app/blob/master/screenshoots/chapter2_4_shouldComponentUpdate.PNG)  
+组件被更新后，其DOM被重绘了，如果需要在重绘后再在组件上做一些DOM相关的操作，则可以在componentDidUpdate中进行  
+
+## 编写一个React实例  
+书上从第三章开始介绍Flux/Redux, 本文在这章打算先用React构建出一个天气预报应用，在之后的章节中在将其改造成Redux  
+效果图：
+![](https://github.com/alivebao/weather_app/blob/master/screenshoots/chapter3_1_Weather_App.PNG)  
+Git Log: 81005f12b7244a98f50314aa36d8028ce245c11f  
+
+### 3.1 实现  
+这个应用中，各React组件分解如图：
+![](https://github.com/alivebao/weather_app/blob/master/screenshoots/chapter3_2_Weather_App_Detail.PNG)  
+也就是说，在这里应用被这样分解了：  
+```
+WeatherApp = WeatherHeader + WeatherPanel 
+  = (<div>{header}</div> + WeatherLocationSelecter) + (WeatherSelectedStatus + WeatherCalenderSelecter)  
+```
+那么各组件应该完成什么功能？分组件来看的话:  
+1. WeatherHeader部分负责选择城市，当城市切换时，应用发起网络请求获取相应城市的天气信息  
+2. WeatherSelectedStatus是一个纯负责展示的组件  
+3. WeatherCalenderSelecter负责展示未来两天的信息，通过点击可在WeatherSelectedStatus中展示当日的具体信息的  
+
+#### 获取信息  
+WeatherHeader负责选择城市 & 获取天气信息，那么在该组件成功获取天气信息后，如何通知应用进行更新？  
+这里通过在WeatherApp添加一个更新天气的回调函数，然后将该函数作为props传递给WeatherHeader。WeatherHeader中的WeatherLocationSelecter获取信息成功后，调用该回调函数通知系统进行重绘：
+```jsx
+//WeatherApp.js
+...
+locationIdUpdate(locationId, dailyInfo) {
+  this.setState({
+    daily: dailyInfo, 
+    selectedLocationId: locationId
+  })
+...
+```
+
+#### 绘制WeatherSelectedStatus  
+这个很简单，WeatherSelectedStatus  是一个傻瓜组件，预设获取的数据类型，完成render即可。  
+傻瓜组件：React中专心负责绘制工作的组件被称为傻瓜组件  
+
+#### WeatherCalenderSelecter和WeatherLocationSelecterStatus的交互  
+在这个天气预报应用中，我们通过WeatherLocationSelecter获取指定城市未来三天的天气信息，并调用WeatherApp传递给它的回调函数重绘应用。WeatherLocationSelecte获取到的数据结构实际上是一个对象数组:  
+```javascript
+[{
+  // dailyInfo of day1
+  ...
+}, {
+  // dailyInfo of day2
+  ...
+}, {
+  // dailyInfo of day3
+  ...
+}]
+```
+WeatherSelectedStatus接受数组的第一个对象，绘制当天的天气  
+WeatherCalenderSelecter接受整个数组，绘制未来天气信息  
+为了能达到 __选择WeatherCalenderSelecter中某天信息，切换WeatherSelectedStatus中显示内容__ 的目的，实际上就是要通过点击CalenderSelecter中的各item切换WeatherSelectedStatus中接受到的天气对象。  
+所以采用和1中类似的方案，在WeatherPanel中增加一个回调函数传递给WeatherCalenderSelecter，点击不同item时切换WeatherPanel传递给WeatherSelectedStatus的内容即可。  
+
+最后附一张解析图：  
+![](https://github.com/alivebao/weather_app/blob/master/screenshoots/chapter3_3_Weather_App_Resolve.PNG)    
+
+注：这里用的API是[心知天气](https://www.seniverse.com)提供的天气接口  
+
+### 3.2 组件性能优化  
+书上在第四章的最后提到通过插件[React Pref](https://chrome.google.com/webstore/detail/hacmcodfllhbnekmghgdlplbdnahmhmm)可检测React组件渲染的性能问题  
+[React的官方文档表示在React 16之后插件react-addons-perf已废弃，可通过浏览器自带的性能分析工具直接分析](https://reactjs.org/docs/perf.html)  
+Chrome -> F12 -> Performance -> User Timing  
+这里头能直接看到React事件，下图是我连点几次第一个日期选项按钮的截图:  
+![](https://github.com/alivebao/weather_app/blob/master/screenshoots/chapter3_4_Weather_App_Update.PNG)  
+可以看到每次点击时，WeatherSelectedStatus每次都走了一遍update过程
+
+第二章中提到过，在React组件的生命周期分为Monut -> Update -> Unmount三步，而Update这一过程可分为：  
+componentWillReceiveProps -> shouldComponentUpdate -> componentWillUpdate -> render -> componentDidUpdate  
+通过修改shouldComponentUpdate可以避免无意义的组件更新，从而达到提升性能的目的。修改组件的更新规则，改为WeatherSelectedStatus只在currentDayInfo变化时才update：  
+```jsx
+// WeatherSelectedStatus
+shouldComponentUpdate(nextProps) {
+  return JSON.stringify(nextProps.currentDayInfo) !== JSON.stringify(this.props.currentDayInfo)
+}
+```
+再次连点几次第一个日期选项按钮，发现这次WeatherSelectedStatus只调用到shouldComponentUpdate就停止了:  
+![](https://github.com/alivebao/weather_app/blob/master/screenshoots/chapter3_5_Weather_App_ShouldUpdate.PNG)  
+然后，我们试着重复点击北京这个按钮时，能看到整个组件都重复渲染了，这里最简单的优化方式是直接避免掉没意义的网络请求= =:
+```jsx
+// WeatherLocationSelecter
+...
+// 1. 在构造函数里加一个state，用于记录上次选中的id
+...
+constructor(props) {
+  ...
+  this.state = {
+    currentSelectedId: undefined
+  }
+  ...
+}
+...
+// 2. 发起网络请求前，比较想要请求的id是否与上次记录的id一致
+...
+locationIdUpdate(locationId) {
+  if(this.state.currentSelectedId === locationId) {
+    return
+  }
+...
+}  
+...
+```  
+另外，为了最大程度避免短时间内多次重复请求已得到的数据，还可以在第一次请求后把数据缓存到浏览器，并加上过期时间  
+
+### 3.3 项目代码组织方式  
+当前代码组织图如下，可以看到是一堆文件全都丢在src下面：  
+![](https://github.com/alivebao/weather_app/blob/master/screenshoots/chapter3_6_Weather_App_Files.PNG)  
+文件可以按角色或功能进行组织  
+1. 按角色进行组织(MVC框架)  
+````
+|
+|--controllers/
+|   |--...
+|
+|--models/
+|   |--...
+|
+|--views/
+|   |--...
+|
+|...
+````  
+2. 按功能进行组织  
+书中提到，在React中，这种是一种更为适用的组织方式。在这里，我们把各个功能模块放入对应文件间中，并在每个文件夹中增加相应的index文件导出本模块的文件，供其他模块进行调用。  
+以WeatherSelectedStatus为例，新建文件夹WeatherSelectedStatus, 将x.js和x.css放入其中，并增加index.js:  
+```javascript
+import view from './WeatherSelectedStatus'
+
+export {view}
+```  
+在需要使用WeatherSelectedStatus的地方，我们可以使用以下方式获取:  
+```javascript
+import {view as WeatherSelectedStatus} from './WeatherSelectedStatus'
+```  
+这么做的好处在于，无论WeatherSelectedStatus如何修改，通过index对外暴露的接口都不会改变，使用时直接安装上面的import方式进行导入即可。  
+最终文件结构如图所示:  
+![](https://github.com/alivebao/weather_app/blob/master/screenshoots/chapter3_7_Weather_App_Files_Structure.PNG)  

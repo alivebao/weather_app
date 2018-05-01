@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
-import WeatherSelectedStatus from './WeatherSelectedStatus'
-import WeatherCalenderSelecter from './WeatherCalenderSelecter'
+import {view as WeatherSelectedStatus} from '../WeatherSelectedStatus'
+import {view as WeatherCalenderSelecter} from '../WeatherCalenderSelecter'
 
 class WeatherPanel extends Component {
   constructor(props) {

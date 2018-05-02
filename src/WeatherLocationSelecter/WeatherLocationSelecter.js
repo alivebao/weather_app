@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import {arrLocation as LocationGroup} from '../utils'
-import {CustomConfig} from '../utils'
+import WeatherStore from '../WeatherStore'
+import {Actions} from '../action'
 
 class WeatherLocationSelecter extends Component {
   constructor(props) {
@@ -11,46 +12,35 @@ class WeatherLocationSelecter extends Component {
     }
 
     this.locationIdUpdate = this.locationIdUpdate.bind(this)
+    this.onChange = this.onChange.bind(this)
   }
 
-  locationIdUpdate(locationId) {
-    if(this.state.currentSelectedId === locationId) {
-      return
-    }
-    this.props.udpateWeatherInfo('', '')
-    let requestCode = 'NA'
-    LocationGroup.forEach((val) => {
-      if(val.id === locationId) {
-        requestCode = val.code
-      }
-    })
-    const requestURL = `/v3/weather/daily.json?key=${CustomConfig.key}&location=${requestCode}&language=zh-Hans&unit=c&start=0&days=3`
-    fetch(requestURL)
-      .then((response) => {
-        if(response.status !== 200) {
-          throw new Error('Fail to get response with status ' + response.status)
-        }
 
-        response.json().then((responseJSON) => {
-          this.setState({
-            currentSelectedId: locationId
-          })
-          this.props.udpateWeatherInfo(locationId, responseJSON.results[0].daily)
-        })
-      })
+  locationIdUpdate(locationId) {
+    Actions.updateLocation(locationId)
+  }
+
+  onChange() {
+    this.setState({
+      currentSelectedId: WeatherStore.getDailyInfo().locationId
+    })
   }
 
   componentDidMount() {
+    WeatherStore.addChangeListener(this.onChange)
     this.locationIdUpdate(LocationGroup[0].id)
   }
 
+  componentWillUnmount() {
+    WeatherStore.removeChangeListener(this.onChange)
+  }
+
   render() {
-  	const {selectedId} = this.props;
     return (
       <div className="weather-selecter">
       	{
       		LocationGroup.map((locationObj) => {
-      			return <button className={locationObj.id === selectedId ? 'selected' : ''} key={locationObj.id} onClick={() => {this.locationIdUpdate(locationObj.id)}}>{locationObj.name}</button>
+      			return <button className={locationObj.id === this.state.currentSelectedId ? 'selected' : ''} key={locationObj.id} onClick={() => {this.locationIdUpdate(locationObj.id)}}>{locationObj.name}</button>
       		})
       	}
       </div>

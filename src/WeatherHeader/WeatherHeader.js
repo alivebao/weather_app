@@ -1,32 +1,40 @@
 import React, { Component } from 'react'
 import {view as WeatherLocationSelecter} from '../WeatherLocationSelecter'
 import {arrLocation as LocationGroup} from '../utils'
-import WeatherStore from '../WeatherStore'
+import {Actions} from '../action'
+import store from '../Store.js'
 import './WeatherHeader.css'
 
 class WeatherHeader extends Component {
   constructor(props) {
     super(props)
 
-    this.state = {
-      selectedId: undefined
-    }
+    this.state = this.getOwnState()
 
+    this.getOwnState = this.getOwnState.bind(this)
     this.onChange = this.onChange.bind(this)
   }
 
+  getOwnState() {
+    return {
+      selectedId: store.getState().locationId
+    }
+  }
+
+  locationIdUpdate(locationId) {    
+    store.dispatch(Actions.updateLocation(locationId))
+  }
+
   onChange() {
-    this.setState({
-      selectedId: WeatherStore.getDailyInfo().locationId
-    })
+    this.setState(this.getOwnState())
   }
 
   componentDidMount() {
-    WeatherStore.addChangeListener(this.onChange)
+    store.subscribe(this.onChange)    
   }
 
   componentWillUnmount() {
-    WeatherStore.removeChangeListener(this.onChange)
+    store.unsubscribe(this.onChange)
   }
   render() {
   	const selectedId = this.state.selectedId;
@@ -39,7 +47,7 @@ class WeatherHeader extends Component {
     return (
       <div className="weather-header">
         <div className="weather-title">{title}</div>      
-        <WeatherLocationSelecter/>
+        <WeatherLocationSelecter LocationGroup={LocationGroup} selectedId={this.state.locationIdUpdate} locationIdUpdate={this.locationIdUpdate}/>
       </div>
     );
   }

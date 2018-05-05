@@ -1,33 +1,36 @@
 import React, { Component } from 'react'
 import {view as WeatherSelectedStatus} from '../WeatherSelectedStatus'
 import {view as WeatherCalenderSelecter} from '../WeatherCalenderSelecter'
-import WeatherStore from '../WeatherStore'
+import store from '../Store.js'
 
 class WeatherPanel extends Component {
   constructor(props) {
     super(props)
 
-    this.state = {
-      selectedCalender: 0, 
-      dailyInfo: undefined
-    }
+    this.state = this.getOwnState()
 
+    this.getOwnState = this.getOwnState.bind(this)
     this.updateSelectedCalender = this.updateSelectedCalender.bind(this)
     this.onChange = this.onChange.bind(this)
   }
 
   onChange() {
-    this.setState({
-      dailyInfo: WeatherStore.getDailyInfo().daily
-    })
+    this.setState(this.getOwnState())
+  }
+
+  getOwnState() {
+    return {
+      selectedCalender: 0, 
+      dailyInfo: store.getState().daily
+    }
   }
 
   componentDidMount() {
-    WeatherStore.addChangeListener(this.onChange)
+    store.subscribe(this.onChange)
   }
 
   componentWillUnmount() {
-    WeatherStore.removeChangeListener(this.onChange)
+    store.unsubscribe(this.onChange)
   }
 
   updateSelectedCalender(selectedCalender) {

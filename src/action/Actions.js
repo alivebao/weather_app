@@ -1,9 +1,8 @@
 import * as ActionTypes from './ActionTypes'
-import AppDispatcher from '../AppDispatcher'
 
-export const updateLocation = (locationId) => {
-	AppDispatcher.dispatch({
+export const updateLocation = (locationId) => {	
+	return {
 		type: ActionTypes.UPDATELOCATION, 
 		locationId: locationId
-	})
+	}
 }

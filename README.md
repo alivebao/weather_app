@@ -5,6 +5,7 @@
   2. [React新的前端思维方式](#react新的前端思维方式)
   3. [设计高质量的React组件](#设计高质量的react组件)
   4. [编写一个React实例](#编写一个react实例)
+  5. [从Flux到Redux](#从flux到redux)
 
 ## 介绍
 在读完程墨老师的[《深入浅出React和Redux》](https://book.douban.com/subject/27033213/)后，打算结合自己的理解，以构建一个显示天气的应用为例，争取涵盖书中所介绍的所有知识点。  
@@ -484,3 +485,181 @@ import {view as WeatherSelectedStatus} from './WeatherSelectedStatus'
 这么做的好处在于，无论WeatherSelectedStatus如何修改，通过index对外暴露的接口都不会改变，使用时直接安装上面的import方式进行导入即可。  
 最终文件结构如图所示:  
 ![](https://github.com/alivebao/weather_app/blob/master/screenshoots/chapter3_7_Weather_App_Files_Structure.PNG)  
+
+## 从Flux到Redux  
+之前的解决方案存在两个问题：  
+1. 数据源可能不统一
+2. 过多层次的钩子函数传递  
+当两个组件依赖同一个数据状态时，我们应该怎么做？是两组件各自维护一个数据状态吗？还是将状态抽至上一层组件？  
+再看一下上一章的组件分解图:  
+![](https://github.com/alivebao/weather_app/blob/master/screenshoots/chapter3_3_Weather_App_Resolve.PNG)  
+在上图的 __WeatherSelectedStatus__ 和 __WeatherCalenderSelecter__ 中，两个组件都需要展示天气信息。  
+如果两个组件分别维护各自的天气信息状态，那么也就是点击切换城市按钮时，让两个组件都去发更新天气状态的网络请求。  
+这么做显然是不合适的，除去效率低不说，当某个组件请求出错，导致两个组件数据不一致时，该以哪个为准？  
+因此，最好的方式是将天气信息抽象至上一层组件。在这里，我们做到了统一数据源，将天气信息daily作为最顶层组件 __WeatherApp__ 的state。  
+这里为什么不把天气信息放在 __WeatherPanel__ ？  
+考虑这么一种情况：当我们点击 __WeatherHeader__ 中更新天气信息的按钮时，如何将得到的新的天气信息传递给 __WeatherPanel__  
+因此，我们需要把天气信息放在 __WeatherApp__ 中。  
+
+__但这么做又导致了另外一个问题: 过多层的钩子函数传递__  
+WeatherLocationSelecter获取天气信息成功后，需要调用WeatherApp传递进来的钩子函数 __locationIdUpdate__ ，这个函数的作用是更新WeatherApp中的selectedId 和 daily  
+然而WeatherHeader并不需要这个函数，将函数传递给它的唯一目的，就是在于将这个函数传递给子组件WeatherLocationSelecter  
+### 5.1 Flux  
+Flux框架结构如图所示：  
+![](https://github.com/alivebao/weather_app/blob/master/screenshoots/chapter4_1_Flux_Structure.PNG)  
+在Flux框架中，数据存储在store中，数据的改变由action进行触发。  
+当dispather收到发来的action后，若该action是已注册过的类型则对其进行处理，处理完成后发送通知，通知监听该action的各类组件执行自己的回调函数。  
+接着我们来看如何使用Flux能够避免以上问题  
+使用Flux，我们需要Dispatcher、Action和Sotre
+1. 首先定义一个Dispatcher，用于接收和处理其他组件发送来的信息：
+```jsx
+import {Dispatcher} from 'flux'
+
+export default new Dispatcher()
+```
+2. 定义Action，也就是组件发送的信息类型:  
+```jsx
+// ActionTypes
+export const UPDATELOCATION = 'updateLocation'
+// Actions
+import * as ActionTypes from './ActionTypes'
+import AppDispatcher from '../AppDispatcher'
+
+export const updateLocation = (locationId) => {
+  AppDispatcher.dispatch({
+    type: ActionTypes.UPDATELOCATION, 
+    locationId: locationId
+  })
+}
+```
+这里通常将使用两个js，一个用于存放信息类型(ActionTypes)，另一个用于定义action的构造函数，也就是通过该函数发送的信息(Actions)  
+这么做的原因在于，store会对不同类型的Action操作也不同，有单独导入action的必要
+3. 定义一个WeatherStore，用于存储天气信息:  
+```jsx
+let locationId = undefined
+let daliyInfo = {}
+
+const WeatherStore = Object.assign({}, EventEmitter.prototype, {
+  getDailyInfo: function() {
+    return daliyInfo
+  },
+
+  emitChange: function() {
+    this.emit(CHANGE_EVENT)
+  },
+
+  addChangeListener: function(cb) {
+    this.on(CHANGE_EVENT, cb)
+  },
+
+  removeChangeListener: function(cb) {
+    this.removeListener(CHANGE_EVENT, cb)
+  }
+})
+
+```  
+这里让WeatherStore继承EventEmitter的方法，该Store接受到 __action: UPDATELOCTION__ 时，更新天气信息dailyInfo，并在更新完成后调用emitChange，通知所有注册在其上的组件：  
+```jsx
+AppDispatcher.register((action) => {
+  if(action.type === ActionTypes.UPDATELOCATION) {
+    if(daliyInfo.locationId === action.locationId) {
+      return
+    }
+    daliyInfo.locationId = action.locationId
+    daliyInfo.daily = "Getting data ..."
+    WeatherStore.emitChange()
+
+    let requestCode = undefined
+    LocationGroup.forEach((val) => {
+      if(val.id === daliyInfo.locationId) {
+        requestCode = val.code
+      }
+    })
+
+    const requestURL = `/v3/weather/daily.json?key=${CustomConfig.key}&location=${requestCode}&language=zh-Hans&unit=c&start=0&days=3`
+    fetch(requestURL)
+      .then((response) => {
+        if(response.status !== 200) {
+          daliyInfo.daily = "Getting data Failed!"
+          throw new Error('Fail to get response with status ' + response.status)
+        }
+        response.json().then((responseJSON) => {
+          daliyInfo.daily = responseJSON.results[0].daily
+          WeatherStore.emitChange()
+        })
+      }).catch((error) => {
+        daliyInfo.daily = "Getting data Failed!"
+        WeatherStore.emitChange()
+      })
+  }
+})
+```
+4. 修改需要监听消息的组件  
+这里以WeatherPanel为例:  
+```jsx
+// WeatherPanel
+  ...
+  onChange() {
+    this.setState({
+      dailyInfo: WeatherStore.getDailyInfo().daily
+    })
+  }
+  componentDidMount() {
+    WeatherStore.addChangeListener(this.onChange)
+  }
+  ...
+```
+在WeatherPanel挂载后，声明监听WeatherStore发出的通知。当WeatherStore的dailyInfo更新完成后，调用emitChange，就会调用WeatherPanel中的onChange，更新WeatherPanel中的dailyInfo  
+WeatherHeader类型，在组件中增加onChange，注册在WeatherStore上:  
+```jsx
+import React, { Component } from 'react'
+import {view as WeatherLocationSelecter} from '../WeatherLocationSelecter'
+import {arrLocation as LocationGroup} from '../utils'
+import WeatherStore from '../WeatherStore'
+import './WeatherHeader.css'
+
+class WeatherHeader extends Component {
+  constructor(props) {
+    super(props)
+
+    this.state = {
+      selectedId: undefined
+    }
+
+    this.onChange = this.onChange.bind(this)
+  }
+
+  onChange() {
+    this.setState({
+      selectedId: WeatherStore.getDailyInfo().locationId
+    })
+  }
+
+  componentDidMount() {
+    WeatherStore.addChangeListener(this.onChange)
+  }
+
+  componentWillUnmount() {
+    WeatherStore.removeChangeListener(this.onChange)
+  }
+  render() {
+    const selectedId = this.state.selectedId;
+    let title = undefined
+    LocationGroup.forEach((val) => {
+      if(val.id === selectedId) {
+        title = val.name;
+      }
+    })
+    return (
+      <div className="weather-header">
+        <div className="weather-title">{title}</div>      
+        <WeatherLocationSelecter/>
+      </div>
+    );
+  }
+}
+
+export default WeatherHeader;
+```  
+可以看到，修改成flux框架后的应用，即实现了单一数据源的目标(所有的数据都存在store中，数据的更新通过action传递)，  
+也避免了无意义的钩子函数的传递(store更新数据后，直接让各组件调用自己的onChange函数，从store中取数据)

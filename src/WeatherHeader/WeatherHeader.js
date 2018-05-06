@@ -1,28 +1,29 @@
 import React, { Component } from 'react'
+import PropTypes from 'prop-types'
 import {view as WeatherLocationSelecter} from '../WeatherLocationSelecter'
 import {arrLocation as LocationGroup} from '../utils'
 import {Actions} from '../action'
-import store from '../Store.js'
 import './WeatherHeader.css'
 
 class WeatherHeader extends Component {
-  constructor(props) {
-    super(props)
+  constructor(props, context) {
+    super(props, context)
 
     this.state = this.getOwnState()
 
     this.getOwnState = this.getOwnState.bind(this)
     this.onChange = this.onChange.bind(this)
+    this.locationIdUpdate = this.locationIdUpdate.bind(this)
   }
 
   getOwnState() {
     return {
-      selectedId: store.getState().locationId
+      selectedId: this.context.store.getState().locationId
     }
   }
 
   locationIdUpdate(locationId) {    
-    store.dispatch(Actions.updateLocation(locationId))
+    this.context.store.dispatch(Actions.updateLocation(locationId))
   }
 
   onChange() {
@@ -30,14 +31,14 @@ class WeatherHeader extends Component {
   }
 
   componentDidMount() {
-    store.subscribe(this.onChange)    
+    this.context.store.subscribe(this.onChange)    
   }
 
   componentWillUnmount() {
-    store.unsubscribe(this.onChange)
+    this.context.store.unsubscribe(this.onChange)
   }
   render() {
-  	const selectedId = this.state.selectedId;
+    const selectedId = this.state.selectedId;
     let title = undefined
     LocationGroup.forEach((val) => {
       if(val.id === selectedId) {
@@ -47,10 +48,14 @@ class WeatherHeader extends Component {
     return (
       <div className="weather-header">
         <div className="weather-title">{title}</div>      
-        <WeatherLocationSelecter LocationGroup={LocationGroup} selectedId={this.state.locationIdUpdate} locationIdUpdate={this.locationIdUpdate}/>
+        <WeatherLocationSelecter LocationGroup={LocationGroup} selectedId={selectedId} locationIdUpdate={this.locationIdUpdate}/>
       </div>
     );
   }
+}
+
+WeatherHeader.contextTypes = {
+  store: PropTypes.object
 }
 
 export default WeatherHeader;

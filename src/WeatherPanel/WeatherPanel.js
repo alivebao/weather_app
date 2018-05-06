@@ -1,11 +1,11 @@
 import React, { Component } from 'react'
 import {view as WeatherSelectedStatus} from '../WeatherSelectedStatus'
 import {view as WeatherCalenderSelecter} from '../WeatherCalenderSelecter'
-import store from '../Store.js'
+import PropTypes from 'prop-types'
 
 class WeatherPanel extends Component {
-  constructor(props) {
-    super(props)
+  constructor(props, context) {
+    super(props, context)
 
     this.state = this.getOwnState()
 
@@ -21,16 +21,16 @@ class WeatherPanel extends Component {
   getOwnState() {
     return {
       selectedCalender: 0, 
-      dailyInfo: store.getState().daily
+      dailyInfo: this.context.store.getState().daily
     }
   }
 
   componentDidMount() {
-    store.subscribe(this.onChange)
+    this.context.store.subscribe(this.onChange)
   }
 
   componentWillUnmount() {
-    store.unsubscribe(this.onChange)
+    this.context.store.unsubscribe(this.onChange)
   }
 
   updateSelectedCalender(selectedCalender) {
@@ -55,4 +55,9 @@ class WeatherPanel extends Component {
     );
   }
 }
+
+WeatherPanel.contextTypes = {
+  store: PropTypes.object
+}
+
 export default WeatherPanel;

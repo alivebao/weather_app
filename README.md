@@ -797,3 +797,76 @@ export default WeatherLocationSelecter;
 Git log: 59826ec6d85188e4223ba3fa88119dcab897e082
 ```  
 ### 4.4 组件context
+组件WeatherHeader和WeatherPanel中都直接导入了store，但在许多情况下，我们并不能确定store的具体存放位置，应该避免这种做法。  
+然而如果采用从应用顶层导入store，并将其作为props传递给子组件的方式，同样会存在另一个问题：  
+当需要store的组件位置很深时，我们需要一级级的通过中间层的组件将store传递给最底层的子组件，即使中间层的组件不需要store  
+为此，React提供了一个叫Context的功能，它可以提供一个上下文环境，使得所有组件均可访问该环境中存储的对象。  
+首先写一个Provider，让该Provider提供context。Provider需要提供 __getChildContext__ 方法，并定义其 __childContextTypes__
+```jsx
+import {Component} from 'react'
+import PropTypes from 'prop-types'
+
+class Provider extends Component {
+  getChildContext() {
+    return {
+      store: this.props.store
+    }
+  }
+
+  render() {
+    return this.props.children
+  }
+}
+
+Provider.childContextTypes = {
+  store: PropTypes.object
+}
+
+export default Provider
+```  
+并将该Provider包裹最顶层的应用组件WeatherApp:  
+```jsx
+import React from 'react';
+import ReactDOM from 'react-dom';
+import './index.css';
+import WeatherApp from './WeatherApp';
+import store from './Store.js'
+import Provider from './Provider'
+
+ReactDOM.render(
+  <Provider store={store}>
+    <WeatherApp />
+  </Provider>, 
+  document.getElementById('root')
+)
+
+```
+这样，当组件需要使用该store时，即可直接通过 __this.context.store__ 的方式获取：  
+```jsx
+// WeatherHeader
+...
+
+class WeatherHeader extends Component {
+  ...
+  constructor(props, context) {
+    super(props, context)
+    ...
+  }
+
+  getOwnState() {
+    return {
+      selectedId: this.context.store.getState().locationId
+    }
+  }
+  ...
+}
+
+WeatherHeader.contextTypes = {
+  store: PropTypes.object
+}
+
+export default WeatherHeader;
+```
+这里需要注意两点:  
+1. 由于使用了context，需要在构造函数中引入该参数
+2. 和Provider一样，需要定义contextTypes

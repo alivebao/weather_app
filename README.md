@@ -1,14 +1,13 @@
 # React实战 - weather_app
 
-## 目录
-  1. [介绍](#介绍)
-  2. [React新的前端思维方式](#react新的前端思维方式)
-  3. [设计高质量的React组件](#设计高质量的react组件)
-  4. [编写一个React实例](#编写一个react实例)
-  5. [从Flux到Redux](#从flux到redux)
-
 ## 介绍
 在读完程墨老师的[《深入浅出React和Redux》](https://book.douban.com/subject/27033213/)后，打算结合自己的理解，以构建一个显示天气的应用为例，争取涵盖书中所介绍的所有知识点。  
+
+## 目录
+  1. [React新的前端思维方式](#react新的前端思维方式)
+  2. [设计高质量的React组件](#设计高质量的react组件)
+  3. [编写一个React实例](#编写一个react实例)
+  4. [从Flux到Redux](#从flux到redux)
 
 ## React新的前端思维方式
 ### 1.1 create-react-app
@@ -504,9 +503,9 @@ import {view as WeatherSelectedStatus} from './WeatherSelectedStatus'
 __但这么做又导致了另外一个问题: 过多层的钩子函数传递__  
 WeatherLocationSelecter获取天气信息成功后，需要调用WeatherApp传递进来的钩子函数 __locationIdUpdate__ ，这个函数的作用是更新WeatherApp中的selectedId 和 daily  
 然而WeatherHeader并不需要这个函数，将函数传递给它的唯一目的，就是在于将这个函数传递给子组件WeatherLocationSelecter  
-### 5.1 Flux  
+### 4.1 Flux  
 Flux框架结构如图所示：  
-![](https://github.com/alivebao/weather_app/blob/master/screenshoots/chapter4_1_Flux_Structure.PNG)  
+![](https://github.com/alivebao/weather_app/blob/master/screenshoots/chapter4_1_Flux_Structure.png)  
 在Flux框架中，数据存储在store中，数据的改变由action进行触发。  
 当dispather收到发来的action后，若该action是已注册过的类型则对其进行处理，处理完成后发送通知，通知监听该action的各类组件执行自己的回调函数。  
 接着我们来看如何使用Flux能够避免以上问题  
@@ -533,7 +532,7 @@ export const updateLocation = (locationId) => {
 }
 ```
 这里通常将使用两个js，一个用于存放信息类型(ActionTypes)，另一个用于定义action的构造函数，也就是通过该函数发送的信息(Actions)  
-这么做的原因在于，store会对不同类型的Action操作也不同，有单独导入action的必要
+这么做的原因在于，store会对不同类型的Action操作也不同，有单独导入action的必要  
 3. 定义一个WeatherStore，用于存储天气信息:  
 ```jsx
 let locationId = undefined
@@ -610,7 +609,7 @@ AppDispatcher.register((action) => {
   ...
 ```
 在WeatherPanel挂载后，声明监听WeatherStore发出的通知。当WeatherStore的dailyInfo更新完成后，调用emitChange，就会调用WeatherPanel中的onChange，更新WeatherPanel中的dailyInfo  
-WeatherHeader类型，在组件中增加onChange，注册在WeatherStore上:  
+WeatherHeader类似，在组件中增加onChange，注册在WeatherStore上:  
 ```jsx
 import React, { Component } from 'react'
 import {view as WeatherLocationSelecter} from '../WeatherLocationSelecter'
@@ -662,4 +661,139 @@ class WeatherHeader extends Component {
 export default WeatherHeader;
 ```  
 可以看到，修改成flux框架后的应用，即实现了单一数据源的目标(所有的数据都存在store中，数据的更新通过action传递)，  
-也避免了无意义的钩子函数的传递(store更新数据后，直接让各组件调用自己的onChange函数，从store中取数据)
+也避免了无意义的钩子函数的传递(store更新数据后，直接让各组件调用自己的onChange函数，从store中取数据)  
+
+### 4.2 Redux实例
+Redux是FLux的一种实现，这里主要有两个地方需要注意：
+1. Redux只有一个store - 在上节Flux实现的实例中，虽然我们也只用了一个Store，但Flux中，应用可以拥有多个Store；Redux规定应用只能拥有一个store
+2. Reducer - 数据的改变通过纯函数Reducer完成  
+先来复习一下[reduce函数](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/reduce):  
+```javascript
+let a = [1, 2, 3, 4].reduce(function reducer(sum, item) {
+  return sum + item
+}, 0)
+console.log(a)  // 10
+```
+数组在这里根据传进的reducer函数对所有元素进行操作，其中sum是上次操作的结果，item是本次操作的对象。  
+应用到Redux中，有：  
+```javascript
+redcucer(state, action)
+```
+也就是说根据action和state产生状态，产生的结果完全由这俩参数决定，这里需要注意：  
+reducer是纯函数， __绝对不能改变state和action这两个参数__  
+回顾之前在flux-WeatherStore里的行为：  
+![](https://github.com/alivebao/weather_app/blob/master/screenshoots/chapter4_2_Redux_Sample.png)  
+这种操作就直接改变了WeatherStore的值，在Redux中是不被允许的，在Redux中，我们应该通过reducer直接返回一个新的state。  
+接下来我们把之前的Flux改成Redux实例：  
+1. npm install --save redux  
+2. 修改action，不再通过Dispather派发，而是直接返回一个action对象
+```jsx
+import * as ActionTypes from './ActionTypes'
+import AppDispatcher from '../AppDispatcher'
+
+export const updateLocation = (locationId) => { 
+  return {
+    type: ActionTypes.UPDATELOCATION, 
+    locationId: locationId
+  }
+}
+```
+3. 创建Store和reducer，其中store用于存储数据，reducer用于定义对数据的处理方式:  
+```jsx
+// store
+import {createStore} from 'redux'
+import reducer from './Reducer.js'
+
+const initValues = {
+  daily: undefined, 
+  locationId: 0
+}
+
+const store = createStore(reducer, initValues)
+
+export default store
+// reducer.js
+...
+
+export default (state, action) => {
+  switch(action.type) {
+    case ActionTypes.UPDATELOCATION:
+      let responseJSON = {...}
+      return {...state, daily: responseJSON.results[0].daily, locationId: action.locationId}
+    default: return state
+  }
+}
+```
+在reducer中，我们的处理方式暂时为同步处理，即一旦接收到action后就返回具有随机天气情况的state，而不去异步发出网络请求获取天气情况  
+__这里不执行异步请求是因为reducer作为一个纯函数，接受到请求后是直接执行并同步返回state，从而引发其他组件渲染的，没有提供异步操作的机会。__  
+__异步请求需要通过中间件进行操作。具体方法会在下一章进行介绍__
+这里注意，reducer直接返回了一个state对象，而不是改变传入的参数state  
+4. 修改view  
+以WeatherPanel为例，我们可以通过store的getState获取store的state：  
+```jsx
+...
+getOwnState() {
+  return {
+    selectedCalender: 0, 
+    dailyInfo: store.getState().daily
+  }
+}
+...
+```  
+向store注册回调函数
+```jsx
+...
+componentDidMount() {
+  store.subscribe(this.onChange)
+}
+
+componentWillUnmount() {
+  store.unsubscribe(this.onChange)
+}
+...
+```  
+5. 修改WeatherLocationSelecter里的方法locationIdUpdate，点击地址时由store发出action: 
+```jsx
+locationIdUpdate(locationId) {    
+  store.dispatch(Actions.updateLocation(locationId))
+}
+```
+由于只有一个Store，APPDispatcher也没有存在的必要了，可以直接删掉。  
+dispatch的方法合并到了store中，对action的处理由reducer进行定义  
+
+### 4.3 容器组件和傻瓜组件  
+在Redux框架下，React组件主要负责两个功能：
+1. 与Store进行交互，读取store的数据以及发送action
+2. 根据props和state渲染界面
+所以可以把组件进行拆分，让父组件负责与store的业务关系(容器组件)，子组件专心负责渲染(傻瓜组件)  
+以我们的应用为例，WeatherLoactionSelect中发送更新天气信息的action这一逻辑可抽至其父组件WeatherHeader中。  
+点击WeatherLocationSeleceter中的button时，通过props调用父组件发送action，这样就可以让LocationSelecter组件专心于界面的渲染:  
+```jsx
+import React, { Component } from 'react';
+
+class WeatherLocationSelecter extends Component {
+
+  render() {
+    const {LocationGroup, locationIdUpdate, selectedId} = this.props
+    return (
+      <div className="weather-selecter">
+        {
+          LocationGroup.map((locationObj) => {
+            return <button className={locationObj.id === selectedId ? 'selected' : ''} key={locationObj.id} onClick={() => locationIdUpdate(locationObj.id)}>{locationObj.name}</button>
+          })
+        }
+      </div>
+    );
+  }
+}
+
+export default WeatherLocationSelecter;
+```
+
+至此，我们的应用结构如图所示:  
+![](https://github.com/alivebao/weather_app/blob/master/screenshoots/chater4_3_Redux_Instance.png)  
+其中WeatherHeader和WeatherPanel为容器组件，负责与store打交道；WeatherLocationSelecter/WeatherCalender/WeatherSelectedStatus均为傻瓜组件，专注于UI渲染工作  
+```jsx
+Git log: 59826ec6d85188e4223ba3fa88119dcab897e082
+```  
+### 4.4 组件context

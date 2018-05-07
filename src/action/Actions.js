@@ -6,3 +6,10 @@ export const updateLocation = (locationId) => {
 		locationId: locationId
 	}
 }
+
+export const updateCalender = (calenderId) => {	
+	return {
+		type: ActionTypes.UPDATECALENDER, 
+		calenderId: calenderId
+	}
+}

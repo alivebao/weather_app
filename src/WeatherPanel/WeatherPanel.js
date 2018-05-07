@@ -10,7 +10,6 @@ class WeatherPanel extends Component {
     this.state = this.getOwnState()
 
     this.getOwnState = this.getOwnState.bind(this)
-    this.updateSelectedCalender = this.updateSelectedCalender.bind(this)
     this.onChange = this.onChange.bind(this)
   }
 
@@ -20,7 +19,6 @@ class WeatherPanel extends Component {
 
   getOwnState() {
     return {
-      selectedCalender: 0, 
       dailyInfo: this.context.store.getState().daily
     }
   }
@@ -33,14 +31,8 @@ class WeatherPanel extends Component {
     this.context.store.unsubscribe(this.onChange)
   }
 
-  updateSelectedCalender(selectedCalender) {
-    this.setState({
-      selectedCalender: selectedCalender
-    })
-  }
-
   render() {
-  	const dailyInfo = this.state.dailyInfo
+  	const dailyInfo = this.context.store.getState().daily
     if(!dailyInfo) {
       return <div>Init...</div>
     }
@@ -49,8 +41,8 @@ class WeatherPanel extends Component {
     }
     return (
       <div className="weather-panel">
-      	<WeatherSelectedStatus currentDayInfo={dailyInfo[this.state.selectedCalender]}/>
-      	<WeatherCalenderSelecter dailyInfo={dailyInfo} updateSelectedCalender={this.updateSelectedCalender}/>
+      	<WeatherSelectedStatus/>
+      	<WeatherCalenderSelecter/>
       </div>
     );
   }

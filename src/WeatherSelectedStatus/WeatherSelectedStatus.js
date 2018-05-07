@@ -1,12 +1,9 @@
 import React, { Component } from 'react'
+import {connect} from 'react-redux'
 import './WeatherSelectedStatus.css'
 
 class WeatherSelectedStatus extends Component {
-
-  shouldComponentUpdate(nextProps) {
-    return JSON.stringify(nextProps.currentDayInfo) !== JSON.stringify(this.props.currentDayInfo)
-  }
-
+  
   render() {
     const {currentDayInfo} = this.props
     const {text_day, code_day, high, low, wind_scale, wind_direction, wind_direction_degree, wind_speed} = currentDayInfo

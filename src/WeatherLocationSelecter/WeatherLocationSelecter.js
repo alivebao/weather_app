@@ -16,4 +16,4 @@ class WeatherLocationSelecter extends Component {
   }
 }
 
-export default WeatherLocationSelecter;
+export default WeatherLocationSelecter

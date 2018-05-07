@@ -35,6 +35,8 @@ export default (state, action) => {
 	      	return {...state, daily: "Getting data Failed!", locationId: action.locationId}
 	      })
 	      */
+	  case ActionTypes.UPDATECALENDER: 
+	  	return {...state, calenderId: action.calenderId}
 		default:
 			return state
 	}

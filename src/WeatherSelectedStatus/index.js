@@ -1,3 +1,3 @@
-import view from './WeatherSelectedStatus'
+import view from './WeatherSelectedStatusWrapper'
 
 export {view}

@@ -4,7 +4,7 @@ import {connect} from 'react-redux'
 
 function mapState(state) {
   return {
-    selectedId: state.selected
+    selectedId: state.locationId
   }
 }
 

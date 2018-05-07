@@ -789,12 +789,45 @@ class WeatherLocationSelecter extends Component {
 
 export default WeatherLocationSelecter;
 ```
+写到这里的时候发现前面有部分写的不规范的地方...  
+1. WeatherPanel中仍存有state - selectedCalender, 应该将其存放至store中，并把calendar的更新作为一个action：  
+```jsx
+// store
+import {createStore} from 'redux'
+import reducer from './Reducer.js'
 
+const initValues = {
+  daily: undefined, 
+  locationId: 0, 
+  calenderId: 0
+}
+
+const store = createStore(reducer, initValues)
+
+export default store
+
+// action
+...
+export const updateCalender = (calenderId) => { 
+  return {
+    type: ActionTypes.UPDATECALENDER, 
+    calenderId: calenderId
+  }
+}
+// Reducer
+...
+case ActionTypes.UPDATECALENDER: 
+  return {...state, calenderId: action.calenderId}
+...
+```
+2. 没有写明白容器组件和傻瓜组件 - WeatherHeader中的render仍做了显示title的逻辑处理，可以把它分成WeatherTitleWrapper + WeatherTitle的组件  
+WeatherPanel中的CalenderSelecter和Selectedstatus也可以拆成 Wrapper Component(focus on deal with store)+ UI(focus on render)  
 至此，我们的应用结构如图所示:  
 ![](https://github.com/alivebao/weather_app/blob/master/screenshoots/chater4_3_Redux_Instance.png)  
 其中WeatherHeader和WeatherPanel为容器组件，负责与store打交道；WeatherLocationSelecter/WeatherCalender/WeatherSelectedStatus均为傻瓜组件，专注于UI渲染工作  
+修改后的代码提交记录为：  
 ```jsx
-Git log: 59826ec6d85188e4223ba3fa88119dcab897e082
+Git log: b8f8e41ed0ee4c1563400ad3032d790c442dfdd8
 ```  
 ### 4.4 组件context
 组件WeatherHeader和WeatherPanel中都直接导入了store，但在许多情况下，我们并不能确定store的具体存放位置，应该避免这种做法。  
@@ -870,45 +903,6 @@ export default WeatherHeader;
 这里需要注意两点:  
 1. 由于使用了context，需要在构造函数中引入该参数
 2. 和Provider一样，需要定义contextTypes  
-
-### 4.5 补丁
-根据之前的介绍，写到这里的时候发现前面有部分写的不规范的地方：  
-1. WeatherPanel中仍存有state - selectedCalender, 应该将其存放至store中，并把calendar的更新作为一个action：  
-```jsx
-// store
-import {createStore} from 'redux'
-import reducer from './Reducer.js'
-
-const initValues = {
-  daily: undefined, 
-  locationId: 0, 
-  calenderId: 0
-}
-
-const store = createStore(reducer, initValues)
-
-export default store
-
-// action
-...
-export const updateCalender = (calenderId) => { 
-  return {
-    type: ActionTypes.UPDATECALENDER, 
-    calenderId: calenderId
-  }
-}
-// Reducer
-...
-case ActionTypes.UPDATECALENDER: 
-  return {...state, calenderId: action.calenderId}
-...
-```
-2. 没有写明白容器组件和傻瓜组件 - WeatherHeader中的render仍做了显示title的逻辑处理，可以把它分成WeatherTitleWrapper + WeatherTitle的组件  
-WeatherPanel中的CalenderSelecter和Selectedstatus也可以拆成 Wrapper Component(focus on deal with store)+ UI(focus on render)
-修改后的代码提交记录为：  
-```jsx
-Git Log: b8f8e41ed0ee4c1563400ad3032d790c442dfdd8
-```  
 
 ### 4.5 react-redux
 react-redux主要做了两件事：  

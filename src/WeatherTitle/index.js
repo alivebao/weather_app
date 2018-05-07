@@ -1,3 +1,3 @@
-import view from './WeatherTitleWrapper'
+import view from './WeatherTitle'
 
 export {view}

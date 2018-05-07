@@ -1,5 +1,21 @@
 import React, { Component } from 'react'
+import {connect} from 'react-redux'
+import {Actions} from '../action'
 import './WeatherCalenderSelecter.css'
+
+function mapState(state) {
+  return {
+    dailyInfo: state.daily
+  }
+}
+
+function mapDispatch(dispatch) {
+  return {
+    updateSelectedCalender: (calenderId) => {
+      dispatch(Actions.updateCalender(calenderId))
+    }
+  }
+}
 
 class WeatherCalenderSelecter extends Component {
 
@@ -25,4 +41,4 @@ class WeatherCalenderSelecter extends Component {
   }
 }
 
-export default WeatherCalenderSelecter;
+export default connect(mapState, mapDispatch)(WeatherCalenderSelecter);

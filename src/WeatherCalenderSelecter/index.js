@@ -1,3 +1,3 @@
-import view from './WeatherCalenderSelecterWrapper'
+import view from './WeatherCalenderSelecter'
 
 export {view}

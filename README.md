@@ -869,4 +869,101 @@ export default WeatherHeader;
 ```
 这里需要注意两点:  
 1. 由于使用了context，需要在构造函数中引入该参数
-2. 和Provider一样，需要定义contextTypes
+2. 和Provider一样，需要定义contextTypes  
+
+### 4.5 补丁
+根据之前的介绍，写到这里的时候发现前面有部分写的不规范的地方：  
+1. WeatherPanel中仍存有state - selectedCalender, 应该将其存放至store中，并把calendar的更新作为一个action：  
+```jsx
+// store
+import {createStore} from 'redux'
+import reducer from './Reducer.js'
+
+const initValues = {
+  daily: undefined, 
+  locationId: 0, 
+  calenderId: 0
+}
+
+const store = createStore(reducer, initValues)
+
+export default store
+
+// action
+...
+export const updateCalender = (calenderId) => { 
+  return {
+    type: ActionTypes.UPDATECALENDER, 
+    calenderId: calenderId
+  }
+}
+// Reducer
+...
+case ActionTypes.UPDATECALENDER: 
+  return {...state, calenderId: action.calenderId}
+...
+```
+2. 没有写明白容器组件和傻瓜组件 - WeatherHeader中的render仍做了显示title的逻辑处理，可以把它分成WeatherTitleWrapper + WeatherTitle的组件  
+WeatherPanel中的CalenderSelecter和Selectedstatus也可以拆成 Wrapper Component(focus on deal with store)+ UI(focus on render)
+修改后的代码提交记录为：  
+```jsx
+Git Log: b8f8e41ed0ee4c1563400ad3032d790c442dfdd8
+```  
+
+### 4.5 react-redux
+react-redux主要做了两件事：  
+1. 提供了Provider - 直接从'react-redux'中导入{Provider}即可
+2. 之前的代码中有很多组件都存在大量的重复代码(subscribe/onChange/getOwnState)，通过react-redux的connect可以避免这种方式  
+各Wrapper组件的主要工作包括两点:  
+1. 从store中获取state，将其传递给包裹的傻瓜组件
+2. 将store的dispatch封装成store，将其传递给包裹的傻瓜组件  
+react-redux的connet的使用形式为：  
+```
+connect(mapStateToProps, mapDispatchToProps)(UIComponent)
+```
+connect接受两个函数作为参数，并返回一个接受傻瓜组件为参数的函数，该函数的最终返回结果为一个class  
+这么说有点绕，也就是说，  
+函数mapStateToProps代替了容器组件中传递state的功能  
+mapState(state, ownProps) - state为store中的state，ownProps为组件的属性  
+函数mapDispatchToProps代替了容器组件中传递dispatch的功能  
+mapDispatcher(dispath, ownProps) - 调用dispatch(xxx)即可发送action
+通过使用connect，可以直接替代容器组件的功能，并不再需要重复先前的各种冗余的代码，大大减少了代码量  
+以之前的WeatherSelectedStatusWrapper + WeatherSelecetedStatus为例，可以直接删了Wrapper，将SelectedStatus改为：  
+```jsx
+import React, { Component } from 'react'
+import {connect} from 'react-redux'
+import './WeatherSelectedStatus.css'
+
+function mapState(state) {
+  return {
+    currentDayInfo: state.daily[state.calenderId]
+  }
+}
+
+class WeatherSelectedStatus extends Component {
+  
+  render() {
+    const {currentDayInfo} = this.props
+    const {text_day, code_day, high, low, wind_scale, wind_direction, wind_direction_degree, wind_speed} = currentDayInfo
+    return (
+      <div className="selected-status">
+        <div className="status">{text_day}</div>
+        <div className="detail">
+          <div>
+            <img alt="status-img" src={require('../img/status_icon/' + code_day + '.png')} />
+            <span>{low} ~ {high}°C</span>
+          </div>
+          <div>
+            <div>风力等级: {wind_scale}</div>
+            <div>风向角度(0~360): {wind_direction} { wind_direction_degree}</div>
+            <div>风速(km): {wind_speed}</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+}
+
+export default connect(mapState)(WeatherSelectedStatus);
+
+```

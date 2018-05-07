@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import WeatherApp from './WeatherApp';
 import store from './Store.js'
-import Provider from './Provider'
+import {Provider} from 'react-redux'
 
 ReactDOM.render(
 	<Provider store={store}>

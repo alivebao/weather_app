@@ -2,6 +2,12 @@ import React, { Component } from 'react'
 import {connect} from 'react-redux'
 import './WeatherSelectedStatus.css'
 
+function mapState(state) {
+  return {
+    currentDayInfo: state.daily[state.calenderId]
+  }
+}
+
 class WeatherSelectedStatus extends Component {
   
   render() {
@@ -26,4 +32,4 @@ class WeatherSelectedStatus extends Component {
   }
 }
 
-export default WeatherSelectedStatus;
+export default connect(mapState)(WeatherSelectedStatus);

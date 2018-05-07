@@ -1,4 +1,20 @@
 import React, { Component } from 'react';
+import {Actions} from '../action'
+import {connect} from 'react-redux'
+
+function mapState(state) {
+  return {
+    selectedId: state.selected
+  }
+}
+
+function mapDispatch(dispatch, ownProps) {
+  return {
+    locationIdUpdate: (locationId) => {
+      dispatch(Actions.updateLocation(locationId))
+    }
+  }
+}
 
 class WeatherLocationSelecter extends Component {
 
@@ -16,4 +32,4 @@ class WeatherLocationSelecter extends Component {
   }
 }
 
-export default WeatherLocationSelecter
+export default connect(mapState, mapDispatch)(WeatherLocationSelecter)

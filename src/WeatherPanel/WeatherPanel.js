@@ -2,7 +2,6 @@ import React, { Component } from 'react'
 import {view as WeatherSelectedStatus} from '../WeatherSelectedStatus'
 import {view as WeatherCalenderSelecter} from '../WeatherCalenderSelecter'
 import {connect} from 'react-redux'
-import PropTypes from 'prop-types'
 
 function mapState(state) {
   return {

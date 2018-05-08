@@ -5,9 +5,10 @@
 
 ## 目录
   1. [React新的前端思维方式](#react新的前端思维方式)
-  2. [设计高质量的React组件](#设计高质量的react组件)
+  2. [React基础](#react基础)
   3. [编写一个React实例](#编写一个react实例)
   4. [从Flux到Redux](#从flux到redux)
+  5. [中间件](#中间件)
 
 ## React新的前端思维方式
 ### 1.1 create-react-app
@@ -118,7 +119,7 @@ __给定该函数固定的参数，函数执行完成后不会改变该参数；
 __该函数不能有语义上可观察的函数副作用，诸如“触发事件”，使输出设备输出，或更改输出值以外物件的内容等__
 这里我的理解是说这个函数不能改变其他东西(比如说全局变量)，也就是说只负责输出。  
 
-## 设计高质量的React组件
+## React基础
 ### prop和state
 React组件里的数据分为两种-prop和state，这两种数据改变即可能引起组件的渲染(只是可能，不是一定会修改的)。  
 
@@ -960,4 +961,119 @@ class WeatherSelectedStatus extends Component {
 
 export default connect(mapState)(WeatherSelectedStatus);
 
-```
+```  
+
+## 中间件  
+上一章中，在使用redux后，我们将请求网络数据的过程改成了本地实时返回数据。  
+这是因为Reducer作为一个纯函数，接受到action后必须立即返回状态，无法执行异步操作。  
+为此，Redux中提供了中间件。所谓中间件，是作为action在派发给Reducer前，对action进行预处理的一种机制：  
+![](https://github.com/alivebao/weather_app/blob/master/screenshoots/chapter5_1_Middleware.png)  
+在这里，我们可以使用Redux提供的中间件redux-thunk进行异步处理
+### redux-thunk  
+一般情况下，action必须存在Type属性，由Reducer进行处理。  
+但当action的类型为function，在经过redux-thunk时，thunk会截获该action并执行function。  
+thunk处理的function可接受两个参数：  
+1. diapatch: 即store的dispath，当thunk处理完成后，可通过dispatch发送新的action
+2. getState: 可通过该方法获取store中存储的state  
+
+修改Store.js，增加中间件redux-thunk:  
+```jsx
+import {createStore, compose, applyMiddleware} from 'redux'
+import reducer from './Reducer.js'
+import thunkMiddelware from 'redux-thunk'
+
+const initValues = {
+  daily: undefined, 
+  locationId: 0, 
+  calenderId: 0
+}
+
+const middlewares = [thunkMiddelware]
+
+const storeEnhancers = compose(applyMiddleware(...middlewares))
+
+export default createStore(reducer, initValues, storeEnhancers)
+```  
+修改action中发送的内容，将其改为函数形式：  
+```jsx
+// 增加用于发送网络请求结果的action
+export const fetchDataSuccess = (daily, locationId) => {
+  return {
+    type: ActionTypes.FETCHDATASUCCESS, 
+    locationId: locationId, 
+    daily: daily
+  }
+}
+
+export const fetchDataStarted = (locationId) => {
+  return {
+    type: ActionTypes.FETCHDATASTARTED, 
+    daily: 'Loading...', 
+    locationId: locationId
+  }
+}
+
+export const fetchDataFailed = (locationId) => {
+  return {
+    type: ActionTypes.FETCHDATAFAILED, 
+    daily: 'get data failed!', 
+    locationId: locationId
+  }
+}
+
+// 获取天气信息
+export const fetchData = (locationId) => {
+  return (dispatch, getState) => {
+    if(getState().locationId === locationId) {
+      return 
+    }
+    let requestCode = undefined
+    LocationGroup.forEach((val) => {
+      if(val.id === locationId) {
+        requestCode = val.code
+      }
+    })
+
+    if(!requestCode) {
+      dispatch(fetchDataFailed(locationId))
+      return
+    }
+
+    dispatch(fetchDataStarted(locationId))
+
+    const requestURL = `/v3/weather/daily.json?key=${CustomConfig.key}&location=${requestCode}&language=zh-Hans&unit=c&start=0&days=3`
+    fetch(requestURL)
+      .then((response) => {
+        if(response.status !== 200) {
+          dispatch(fetchDataFailed(locationId))
+          return
+        }
+        response.json().then((responseJSON) => {
+          dispatch(fetchDataSuccess(responseJSON.results[0].daily, locationId))
+        }).catch((error) => {
+          dispatch(fetchDataFailed(locationId))
+        })
+      })
+  }
+}
+```  
+至此，当时，redux-thunk可捕获该action __Actions.fetchData(locationId)__ ，并在获取数据过程中发送相应的action，通知Reducer返回对应的state:  
+```jsx
+// Reducer.js
+import {ActionTypes} from './action'
+
+export default (state, action) => {
+  switch(action.type) {
+    case ActionTypes.UPDATECALENDER: 
+      return {...state, calenderId: action.calenderId}
+    case ActionTypes.FETCHDATASTARTED: 
+      return {...state, daily: action.daily, locationId: action.locationId}
+    case ActionTypes.FETCHDATASUCCESS: 
+      return {...state, daily: action.daily, locationId: action.locationId}
+    case ActionTypes.FETCHDATAFAILED: 
+      return {...state, daily: action.daily, locationId: action.locationId}
+    default:
+      return state
+  }
+}
+```  

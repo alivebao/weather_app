@@ -11,13 +11,12 @@ function mapState(state) {
 function mapDispatch(dispatch, ownProps) {
   return {
     locationIdUpdate: (locationId) => {
-      dispatch(Actions.updateLocation(locationId))
+      dispatch(Actions.fetchData(locationId))
     }
   }
 }
 
 class WeatherLocationSelecter extends Component {
-
   render() {
     const {LocationGroup, locationIdUpdate, selectedId} = this.props
     return (

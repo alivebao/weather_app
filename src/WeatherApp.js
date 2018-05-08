@@ -8,7 +8,7 @@ import './WeatherApp.css'
 
 class WeatherApp extends Component {	
 	componentDidMount() {		
-		store.dispatch(Actions.updateLocation(LocationGroup[0].id))
+		store.dispatch(Actions.fetchData(LocationGroup[0].id))
 	}
 
   render() {

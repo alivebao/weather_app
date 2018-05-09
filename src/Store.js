@@ -1,6 +1,6 @@
 import {createStore, compose, applyMiddleware} from 'redux'
 import reducer from './Reducer.js'
-import thunkMiddelware from 'redux-thunk'
+import {customThunkMiddleware, customLogMiddleware} from './customMiddleware'
 
 const initValues = {
 	daily: undefined, 
@@ -8,7 +8,7 @@ const initValues = {
 	calenderId: 0
 }
 
-const middlewares = [thunkMiddelware]
+const middlewares = [customThunkMiddleware, customLogMiddleware]
 
 const storeEnhancers = compose(applyMiddleware(...middlewares))
 

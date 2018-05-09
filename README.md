@@ -1,7 +1,7 @@
 # React实战 - weather_app
 
 ## 介绍
-在读完程墨老师的[《深入浅出React和Redux》](https://book.douban.com/subject/27033213/)后，打算结合自己的理解，以构建一个显示天气的应用为例，争取涵盖书中所介绍的所有知识点。  
+在读完程墨老师的[《深入浅出React和Redux》](https://book.douban.com/subject/27033213/)后，打算结合自己的理解，以构建一个显示天气的应用进行总结。  
 
 ## 目录
   1. [React新的前端思维方式](#react新的前端思维方式)
@@ -1077,3 +1077,70 @@ export default (state, action) => {
   }
 }
 ```  
+
+### 自定义中间件
+自定义中间件时，需按如下格式进行:  
+```jsx
+function doNothyingMiddleware({dispatch, getState}) {
+  return function(next) {
+    return function(action) {
+      return next(action)
+    }
+  }
+}
+```
+dispath & getState: store中的方法，用于发送action及获取state  
+next: function，执行next(action)将当前处理的action传递给下一个中间件  
+action: 系统中发送的action对象  
+可以看到函数嵌套了很多层 - Redux根据函数式编程的思想进行设计，其一个重要的点在于让每个函数的功能尽量的小，通过函数的嵌套组合实现复杂功能  
+由此，我们可自定义上节中的thunk中间件：当action类型为函数时，调用该函数，否则不做处理，将action直接向后传递
+```jsx
+// customMiddlewares
+let customThunkMiddleware = ({dispatch, getState}) => {
+  return function(next) {
+    return function(action) {
+      if(typeof action === 'function') {
+        return action(dispatch, getState)
+      }     
+      return next(action)
+    }
+  }
+}
+
+export {customThunkMiddleware}
+```  
+我们也可以定义多个中间件对action进行处理，其处理顺序会按照在Store.js中定义middlewares的顺序进行。  
+比如我们再定义一个打印action具体信息的中间件:  
+```jsx
+// customMiddlewares
+...
+let customLogMiddleware = ({dispatch, getState}) => {
+  return (next) => {
+    return (action) => {
+      console.log("action type is: " + action.type)
+      next(action)
+    }
+  }
+}
+
+export {customThunkMiddleware, customLogMiddleware}
+```
+并将其加入middlewares数组中:  
+```jsx
+import {createStore, compose, applyMiddleware} from 'redux'
+import reducer from './Reducer.js'
+import {customThunkMiddleware, customLogMiddleware} from './customThunkMiddleware'
+
+const initValues = {
+  daily: undefined, 
+  locationId: 0, 
+  calenderId: 0
+}
+
+const middlewares = [customThunkMiddleware, customLogMiddleware]
+
+const storeEnhancers = compose(applyMiddleware(...middlewares))
+
+export default createStore(reducer, initValues, storeEnhancers)
+```  
+运行后，通过断点可看到系统中每次发送的action都会先后经过 __customThunkMiddleware__ 和 __customLogMiddleware__  

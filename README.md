@@ -1,7 +1,14 @@
 # React实战 - weather_app
 
 ## 介绍
-在读完程墨老师的[《深入浅出React和Redux》](https://book.douban.com/subject/27033213/)后，打算结合自己的理解，以构建一个显示天气的应用进行总结。  
+在读完程墨老师的[《深入浅出React和Redux》](https://book.douban.com/subject/27033213/)后，结合自己的理解，构建一个显示天气的应用进行总结。  
+执行:  
+```bash
+npm insatll
+npm start
+```
+运行效果图:  
+![](https://github.com/alivebao/weather_app/blob/master/screenshoots/chapter3_1_Weather_App.PNG)  
 
 ## 目录
   1. [React新的前端思维方式](#react新的前端思维方式)
